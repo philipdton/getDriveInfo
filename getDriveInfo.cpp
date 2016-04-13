@@ -71,13 +71,13 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 //! [2]
 
 //! [1] - pton start
-    display2 = new QTextEdit("\r0");
+    display2 = new QTextEdit("\rPlease select a drive");
 //! [1] //! [2]
     display2->setReadOnly(true);
     display2->setAlignment(Qt::AlignRight);
 
     QFont font2 = display2->font();
-    font2.setPointSize(font2.pointSize() + 8);
+    font2.setPointSize(font2.pointSize() + 2);
     display2->setFont(font2);
 //! [2] - pton end
 
@@ -86,6 +86,7 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
         digitButtons[i] = createButton(QString::number(i), SLOT(digitClicked()));
     }
 
+    /*
     Button *pointButton = createButton(tr("."), SLOT(pointClicked()));
     Button *changeSignButton = createButton(tr("\302\261"), SLOT(changeSignClicked()));
 
@@ -107,6 +108,7 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
     Button *powerButton = createButton(tr("x\302\262"), SLOT(unaryOperatorClicked()));
     Button *reciprocalButton = createButton(tr("1/x"), SLOT(unaryOperatorClicked()));
     Button *equalButton = createButton(tr("="), SLOT(equalClicked()));
+*/
 
     // pton
     QLabel *selectDriveLabel = new QLabel(tr("Select Drive:"));
@@ -121,24 +123,25 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
         QFileInfo fileInfo = list.at(i);
         selectDriveCombo->insertItem(i, fileInfo.absolutePath());
     }
-    Button *getInfoButton = createButton(tr("Get Drive Info"), SLOT(getInfoClicked()));
-    Button *saveResultButton = createButton(tr("Save Result"), SLOT(saveResultClicked()));
+    Button *getInfoButton = createButton(tr(" Get Drive Info "), SLOT(getInfoClicked()));
+    Button *saveResultButton = createButton(tr(" Save Result "), SLOT(saveResultClicked()));
 //! [4]
 
 //! [5]
 //! [5] //! [6]
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-    mainLayout->addWidget(display, 0, 0, 1, 6);
-    mainLayout->addWidget(backspaceButton, 1, 0, 1, 2);
-    mainLayout->addWidget(clearButton, 1, 2, 1, 2);
-    mainLayout->addWidget(clearAllButton, 1, 4, 1, 2);
 
     // pton
     mainLayout->addWidget(selectDriveLabel, 0,  8, 1, 8);
     mainLayout->addWidget(selectDriveCombo, 0, 16, 1,18);
-    mainLayout->addWidget(getInfoButton,    0, 36, 1, 8);
-    mainLayout->addWidget(saveResultButton, 0, 46, 1, 8);
-    mainLayout->addWidget(display2, 1, 8, 40, 50);
+    mainLayout->addWidget(getInfoButton,    0, 36, 1,12);
+    mainLayout->addWidget(saveResultButton, 0, 92, 1,12);
+    mainLayout->addWidget(display2,         1, 8, 80, 100);
+/*
+    mainLayout->addWidget(display, 0, 0, 1, 6);
+    mainLayout->addWidget(backspaceButton, 1, 0, 1, 2);
+    mainLayout->addWidget(clearButton, 1, 2, 1, 2);
+    mainLayout->addWidget(clearAllButton, 1, 4, 1, 2);
 
     mainLayout->addWidget(clearMemoryButton, 2, 0);
     mainLayout->addWidget(readMemoryButton, 3, 0);
@@ -164,6 +167,7 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
     mainLayout->addWidget(powerButton, 3, 5);
     mainLayout->addWidget(reciprocalButton, 4, 5);
     mainLayout->addWidget(equalButton, 5, 5);
+*/
     setLayout(mainLayout);
 
     selectedDrive = selectDriveCombo->currentText();

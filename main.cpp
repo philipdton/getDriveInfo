@@ -39,7 +39,7 @@
 ****************************************************************************/
 
 #include <QApplication>
-
+#include <QDesktopWidget>
 #include "getDriveInfo.h"
 
 int main(int argc, char *argv[])
@@ -47,5 +47,13 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     GetDriveInfo getInfo;
     getInfo.show();
+
+    // Move the application to center of the screen
+    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    QPoint appPosition = getInfo.mapToParent(getInfo.pos());
+    int x = appPosition.x() / 2;
+    int y = (screenGeometry.height() - getInfo.height()) / 2.5;
+    getInfo.move(x, y);
+
     return app.exec();
 }
