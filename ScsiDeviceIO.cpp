@@ -66,9 +66,9 @@ typedef struct Result_Return
     QString strResult;
     int     iResult;
     QString VendorID, ProductID, ProductRevision, UnitSerialNumber, SMIChip;
-    unsigned int BlockSize, DiskSize, Total_MU, Total_LBA, LBA_per_MU;
-    int Current_BadBlock[MAX_MU], Initial_BadBlock[MAX_MU], Total_DataBlock[MAX_MU];
-    int Initial_SpareBlock[MAX_MU], Current_SpareBlock[MAX_MU];
+    uint BlockSize, DiskSize, Total_MU, Total_LBA, LBA_per_MU;
+    uint Current_BadBlock[MAX_MU], Initial_BadBlock[MAX_MU], Total_DataBlock[MAX_MU];
+    uint Initial_SpareBlock[MAX_MU], Current_SpareBlock[MAX_MU];
 
 }
 reResult;
@@ -88,7 +88,7 @@ reResult GetDvdStatus(QString drive)
     const QString dvdDriveLetter = drive.left(2);
     Result_Return reResult;
     unsigned char FourBytes[4], TwoBytes[2];
-    unsigned int SLBA;
+    uint SLBA;
 
     if ( dvdDriveLetter.isEmpty() )
     {
@@ -256,7 +256,7 @@ reResult GetDvdStatus(QString drive)
 
         strResult = dvdDriveLetter + (char)DataBuf;
 	}
-    else  // There's a error
+    else  // There's an error
     {
         LPVOID lpMsgBuf;
         LPVOID lpDisplayBuf;
@@ -313,7 +313,7 @@ reResult GetDvdStatus(QString drive)
 
         strResult = dvdDriveLetter + (char)DataBuf;
     }
-    else  // There's a error
+    else  // There's an error
     {
         LPVOID lpMsgBuf;
         LPVOID lpDisplayBuf;
@@ -377,7 +377,7 @@ reResult GetDvdStatus(QString drive)
         reResult.strResult += "\nBlock Size:         \t" + QString::number(reResult.BlockSize);
         reResult.strResult += "\nDisk Size:          \t" + QString::number(reResult.DiskSize / BYTES_IN_MB) + " MB";
     }
-    else  // There's a error
+    else  // There's an error
     {
         LPVOID lpMsgBuf;
         LPVOID lpDisplayBuf;
@@ -440,7 +440,7 @@ reResult GetDvdStatus(QString drive)
         reResult.strResult += " (0x" + QString::number(reResult.Total_LBA, 16).toUpper() + ")";
         reResult.strResult += "\nLBA per MU:       \t" + QString::number(reResult.LBA_per_MU);
     }
-    else  // There's a error
+    else  // There's an error
     {
         LPVOID lpMsgBuf;
         LPVOID lpDisplayBuf;
@@ -472,7 +472,7 @@ reResult GetDvdStatus(QString drive)
     sptd_sb.sptd.DataBuffer = (PVOID) &( RdBBDataBuf );
 
     /* Loop through each MU */
-    for (unsigned int mu=0; mu<reResult.Total_MU; mu++)
+    for (uint mu=0; mu<reResult.Total_MU; mu++)
     {
         /* Loop through each FBlk */
         for (int FBlk=0x3FF; FBlk>=0; FBlk--)
@@ -481,7 +481,7 @@ reResult GetDvdStatus(QString drive)
             TwoBytes[1] = FBlk & 0xFF;
             ptr2Buffer = &cdbR10[init_and_current_badblocks][2];
             memcpy( ptr2Buffer, TwoBytes, 2);
-            TwoBytes[0] = ((unsigned int)mu) & 0xFF;
+            TwoBytes[0] = ((uint)mu) & 0xFF;
             ptr2Buffer = &cdbR10[init_and_current_badblocks][6];
             memcpy( ptr2Buffer, TwoBytes, 1);
 
@@ -526,18 +526,10 @@ reResult GetDvdStatus(QString drive)
                     reResult.Total_DataBlock[mu] = *(int *)TwoBytes;
                     reResult.SMIChip = qDataBuf.mid(0x114, 8);
 
-                    reResult.strResult += "\n\nFor MU:         \t" + QString::number(mu);
-                    reResult.strResult += "\nCurrent BadBlock: \t" + QString::number(reResult.Current_BadBlock[mu]);
-                    reResult.strResult += " (0x" + QString::number(reResult.Current_BadBlock[mu], 16).toUpper() + ")";
-                    reResult.strResult += "\nInitial  BadBlock:   \t" + QString::number(reResult.Initial_BadBlock[mu]);
-                    reResult.strResult += " (0x" + QString::number(reResult.Initial_BadBlock[mu], 16).toUpper() + ")";
-                    reResult.strResult += "\nTotal DataBlock:  \t" + QString::number(reResult.Total_DataBlock[mu]);
-                    reResult.strResult += " (0x" + QString::number(reResult.Total_DataBlock[mu], 16).toUpper() + ")";
-
                     break;  // break out of for loop FBlk
                 }
             }
-            else  // There's a error
+            else  // There's an error
             {
                 LPVOID lpMsgBuf;
                 LPVOID lpDisplayBuf;
@@ -565,7 +557,7 @@ reResult GetDvdStatus(QString drive)
 
         }  /* end of for loop each FBlk */
 
-        /* 3. Calculate Initial Spare Numbers for each MU */
+        /* 5+. Calculate Initial Spare Numbers for each MU */
         /**************************************************/
         if (mu == 0)
         {
@@ -578,13 +570,15 @@ reResult GetDvdStatus(QString drive)
 
     }  /* end of for loop each mu */
 
+    reResult.strResult += "\nSMI Chip:         \t" + reResult.SMIChip;
+
     /* 6 - READ_10 command to get Current Spare Numbers for each MU step 1 */
     sptd_sb.sptd.CdbLength = READ10_CMD_LEN;
     sptd_sb.sptd.DataTransferLength = READ10_REPLY_LEN;
     sptd_sb.sptd.DataBuffer = (PVOID) &( ReadDataBuf );
 
     /* Loop through each MU */
-    for (unsigned int mu=0; mu<reResult.Total_MU; mu++)
+    for (uint mu=0; mu<reResult.Total_MU; mu++)
     {
         SLBA = (reResult.LBA_per_MU * mu) + (reResult.LBA_per_MU / 2);
 
@@ -595,7 +589,7 @@ reResult GetDvdStatus(QString drive)
         ptr2Buffer = &cdbR10[current_spare_blocks_1][2];
         memcpy( ptr2Buffer, FourBytes, 4);
 
-        memcpy(sptd_sb.sptd.Cdb, cdbR10[init_and_current_badblocks], sizeof(cdbR10[init_and_current_badblocks]));
+        memcpy(sptd_sb.sptd.Cdb, cdbR10[current_spare_blocks_1], sizeof(cdbR10[current_spare_blocks_1]));
 
         ZeroMemory(ReadDataBuf, READ10_REPLY_LEN);
         ZeroMemory(sptd_sb.SenseBuf, MAX_SENSE_LEN);
@@ -619,13 +613,21 @@ reResult GetDvdStatus(QString drive)
 
             reResult.Current_SpareBlock[mu] = qDataBuf.mid(0x114, 1).toInt(0, 16);
 
-            reResult.strResult += "\n\nFor MU:         \t" + QString::number(mu);
-            reResult.strResult += "\nInitial SpareBlock: \t" + QString::number(reResult.Initial_SpareBlock[mu]);
-            reResult.strResult += " (0x" + QString::number(reResult.Initial_SpareBlock[mu], 16).toUpper() + ")";
-            reResult.strResult += "\nCurrent SpareBlock: \t" + QString::number(reResult.Current_SpareBlock[mu]);
-            reResult.strResult += " (0x" + QString::number(reResult.Current_SpareBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += QStringLiteral("\n\nFor MU:         \t%1").arg(mu);
+
+            reResult.strResult += "\nCurrent BadBlock: \t" + QString::number((ushort)reResult.Current_BadBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Current_BadBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nInitial  BadBlock:   \t" + QString::number((ushort)reResult.Initial_BadBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Initial_BadBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nTotal DataBlock:  \t" + QString::number((ushort)reResult.Total_DataBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Total_DataBlock[mu], 16).toUpper() + ")";
+
+            reResult.strResult += "\nInitial SpareBlock: \t" + QString::number((ushort)reResult.Initial_SpareBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Initial_SpareBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nCurrent SpareBlock: \t" + QString::number((ushort)reResult.Current_SpareBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Current_SpareBlock[mu], 16).toUpper() + ")";
         }
-        else  // There's a error
+        else  // There's an error
         {
             LPVOID lpMsgBuf;
             LPVOID lpDisplayBuf;
@@ -662,7 +664,6 @@ reResult GetDvdStatus(QString drive)
 
     CloseHandle(hDevice);
 
-    reResult.strResult += "\nSMI Chip:         \t" + reResult.SMIChip;
     reResult.strResult += "\n";
     return reResult;
 }

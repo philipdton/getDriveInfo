@@ -71,10 +71,10 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 //! [2]
 
 //! [1] - pton start
-    display2 = new QTextEdit("\rPlease select a drive");
+    display2 = new QTextEdit("Please select a drive then click Get Drive Info button");
 //! [1] //! [2]
     display2->setReadOnly(true);
-    display2->setAlignment(Qt::AlignRight);
+    display2->setAlignment(Qt::AlignLeft);
 
     QFont font2 = display2->font();
     font2.setPointSize(font2.pointSize() + 2);
@@ -129,7 +129,7 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 
 //! [5]
 //! [5] //! [6]
-    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
+    mainLayout->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
     // pton
     mainLayout->addWidget(selectDriveLabel, 0,  8, 1, 8);
