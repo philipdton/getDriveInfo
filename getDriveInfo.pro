@@ -11,3 +11,4 @@ SOURCES       = button.cpp \
 # install
 target.path = C:/dev/getDriveInfo
 INSTALLS += target
+CONFIG += static
