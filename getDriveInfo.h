@@ -43,6 +43,7 @@
 
 #include <QWidget>
 #include <QLayout>
+#include <QComboBox>
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;
@@ -59,6 +60,7 @@ public:
     GetDriveInfo(QWidget *parent = 0);
     QString selectedDrive;
     QGridLayout *mainLayout = new QGridLayout;
+    QComboBox selectDriveCombo;
 
 private slots:
     void digitClicked();
@@ -77,6 +79,7 @@ private slots:
     void addToMemory();
     void selectDriveClicked();
     void getInfoClicked();
+    void refreshDriveClicked();
     void saveResultClicked();
 //! [0]
 

@@ -41,7 +41,6 @@
 #include <QtWidgets>
 #include <QDir>
 #include <QLabel>
-#include <QComboBox>
 #include <cmath>
 
 #include "button.h"
@@ -112,7 +111,6 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 
     // pton
     QLabel *selectDriveLabel = new QLabel(tr("Select Drive:"));
-    QComboBox *selectDriveCombo = new QComboBox();
 //    QFileSystemModel *model = new QFileSystemModel;
 //    model->setFilter(QDir::Drives);
 //    selectDriveCombo->setModel(model);
@@ -121,9 +119,10 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
     QFileInfoList list = dir.drives();
     for (int i = 0; i < list.size(); ++i) {
         QFileInfo fileInfo = list.at(i);
-        selectDriveCombo->insertItem(i, fileInfo.absolutePath());
+        selectDriveCombo.insertItem(i, fileInfo.absolutePath());
     }
     Button *getInfoButton = createButton(tr(" Get Drive Info "), SLOT(getInfoClicked()));
+    Button *refreshDriveButton = createButton(tr(" Refresh Drive List "), SLOT(refreshDriveClicked()));
     Button *saveResultButton = createButton(tr(" Save Result "), SLOT(saveResultClicked()));
 //! [4]
 
@@ -133,8 +132,9 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 
     // pton
     mainLayout->addWidget(selectDriveLabel, 0,  8, 1, 8);
-    mainLayout->addWidget(selectDriveCombo, 0, 16, 1,18);
+    mainLayout->addWidget(&selectDriveCombo, 0, 16, 1,18);
     mainLayout->addWidget(getInfoButton,    0, 36, 1,12);
+    mainLayout->addWidget(refreshDriveButton, 0, 66, 1,12);
     mainLayout->addWidget(saveResultButton, 0, 92, 1,12);
     mainLayout->addWidget(display2,         1, 8, 80, 100);
 /*
@@ -170,7 +170,7 @@ GetDriveInfo::GetDriveInfo(QWidget *parent)
 */
     setLayout(mainLayout);
 
-    selectedDrive = selectDriveCombo->currentText();
+    selectedDrive = selectDriveCombo.currentText();
     setWindowTitle(tr("getDriveInfo"));
 }
 //! [6]
@@ -453,11 +453,6 @@ void GetDriveInfo::selectDriveClicked()
     }
     display2->setText(driveListString);
     display->setText(tr("Select Drive"));
-
-//    QStringListModel model;
-//    model.setStringList(driveList);
-
-
 }
 //! [40]
 
@@ -473,10 +468,35 @@ void GetDriveInfo::getInfoClicked()
 }
 //! [42]
 
+//! [43]
+void GetDriveInfo::refreshDriveClicked()
+{
+    // Refresh the drive list
+    QDir dir;
+    QFileInfoList list = dir.drives();
+    int curIndex = selectDriveCombo.currentIndex();
+    while (selectDriveCombo.count() > 0) {  // First, clear out current list
+        selectDriveCombo.removeItem(0);
+    }
+    for (int i = 0; i < list.size(); ++i) {
+        QFileInfo fileInfo = list.at(i);
+        selectDriveCombo.insertItem(i, fileInfo.absolutePath());
+    }
+    selectDriveCombo.setCurrentIndex(curIndex);
+}
+//! [43]
+
 //! [44]
 void GetDriveInfo::saveResultClicked()
 {
-    display2->setText(start_main(selectedDrive));
-    display->setText(tr("Save Result"));
+    QString filename = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                    "untitled.html",
+                                                    tr("HTML files (*.html)"));
+    QFile file( filename );
+    file.open( QIODevice::WriteOnly );
+    // store data in file
+    QTextStream stream(&file);
+    stream << display2->toHtml();
+    file.close();
 }
 //! [44]

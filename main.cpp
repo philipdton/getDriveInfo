@@ -52,8 +52,9 @@ int main(int argc, char *argv[])
     QRect screenGeometry = QApplication::desktop()->screenGeometry();
     QPoint appPosition = getInfo.mapToParent(getInfo.pos());
     int x = appPosition.x() / 2;
-    int y = (screenGeometry.height() - getInfo.height()) / 2.5;
-    getInfo.move(x, y);
+    //int y = (screenGeometry.height() - getInfo.height()) / 2.5;
+    getInfo.resize(getInfo.width(), getInfo.height() * 1.5);
+    getInfo.move(x, 10);
 
     return app.exec();
 }

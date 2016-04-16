@@ -681,19 +681,15 @@ QString start_main(QString drive)
     switch( returnResult.iResult )
     {
     case 0:
-        std::cout << "DVD tray closed, no media" << std::endl;
         strResult = returnResult.strResult + "No media";
         break;
     case 1:
-        std::cout << "DVD tray open" << std::endl;
         strResult = returnResult.strResult + "DVD tray open";
         break;
     case 2:
-        std::cout << "DVD tray closed, media present" << std::endl;
         strResult = returnResult.strResult + "   Done";
         break;
     default:
-        std::cout << "Drive not ready" << std::endl;
         strResult = returnResult.strResult + "Drive not ready\nPlease select a different drive\n";
         break;
     }
