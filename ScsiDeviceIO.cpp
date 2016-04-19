@@ -67,8 +67,8 @@ typedef struct Result_Return
     int     iResult;
     QString VendorID, ProductID, ProductRevision, UnitSerialNumber, SMIChip;
     uint BlockSize, DiskSize, Total_MU, Total_LBA, LBA_per_MU;
-    uint Current_BadBlock[MAX_MU], Initial_BadBlock[MAX_MU], Total_DataBlock[MAX_MU];
-    uint Initial_SpareBlock[MAX_MU], Current_SpareBlock[MAX_MU];
+    ushort Current_BadBlock[MAX_MU], Initial_BadBlock[MAX_MU], Total_DataBlock[MAX_MU];
+    ushort Initial_SpareBlock[MAX_MU], Current_SpareBlock[MAX_MU];
 
 }
 reResult;
@@ -363,7 +363,6 @@ reResult GetDvdStatus(QString drive)
     if(iResult)
     {
         reResult.iResult = 2;
-        qDataBuf = QString::fromLatin1((const char *)&DataBuf[0], READCAP_REPLY_LEN);
         FourBytes[0] = DataBuf[7];
         FourBytes[1] = DataBuf[6];
         FourBytes[2] = DataBuf[5];
@@ -427,7 +426,6 @@ reResult GetDvdStatus(QString drive)
     if(iResult)
     {
         reResult.iResult = 2;
-        qDataBuf = QString::fromLatin1((const char *)&ReadDataBuf[0], READ10_REPLY_LEN);
         reResult.Total_MU  = ReadDataBuf[1];
         FourBytes[0] = ReadDataBuf[0x17];
         FourBytes[1] = ReadDataBuf[0x16];
@@ -481,7 +479,7 @@ reResult GetDvdStatus(QString drive)
             TwoBytes[1] = FBlk & 0xFF;
             ptr2Buffer = &cdbR10[init_and_current_badblocks][2];
             memcpy( ptr2Buffer, TwoBytes, 2);
-            TwoBytes[0] = ((uint)mu) & 0xFF;
+            TwoBytes[0] = ((ushort)mu) & 0xFF;
             ptr2Buffer = &cdbR10[init_and_current_badblocks][6];
             memcpy( ptr2Buffer, TwoBytes, 1);
 
@@ -517,13 +515,13 @@ reResult GetDvdStatus(QString drive)
                 {
                     TwoBytes[0] = RdBBDataBuf[0x101];
                     TwoBytes[1] = RdBBDataBuf[0x100];
-                    reResult.Current_BadBlock[mu] = *(int *)TwoBytes;
+                    reResult.Current_BadBlock[mu] = *(ushort *)TwoBytes;
                     TwoBytes[0] = RdBBDataBuf[0x105];
                     TwoBytes[1] = RdBBDataBuf[0x104];
-                    reResult.Initial_BadBlock[mu] = reResult.Current_BadBlock[mu] - (*(int *)TwoBytes);
+                    reResult.Initial_BadBlock[mu] = reResult.Current_BadBlock[mu] - (*(ushort *)TwoBytes);
                     TwoBytes[0] = RdBBDataBuf[0x113];
                     TwoBytes[1] = RdBBDataBuf[0x112];
-                    reResult.Total_DataBlock[mu] = *(int *)TwoBytes;
+                    reResult.Total_DataBlock[mu] = *(ushort *)TwoBytes;
                     reResult.SMIChip = qDataBuf.mid(0x114, 8);
 
                     break;  // break out of for loop FBlk
@@ -609,9 +607,78 @@ reResult GetDvdStatus(QString drive)
         if(iResult)
         {
             reResult.iResult = 2;
-            qDataBuf = QString::fromLatin1((const char *)&ReadDataBuf[0], READ10_REPLY_LEN);
+            reResult.Current_SpareBlock[mu] = ReadDataBuf[0x65];
+/*
+            reResult.strResult += QStringLiteral("\n\nFor MU:         \t%1").arg(mu);
 
-            reResult.Current_SpareBlock[mu] = qDataBuf.mid(0x114, 1).toInt(0, 16);
+            reResult.strResult += "\nCurrent BadBlock: \t" + QString::number((ushort)reResult.Current_BadBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Current_BadBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nInitial  BadBlock:   \t" + QString::number((ushort)reResult.Initial_BadBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Initial_BadBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nTotal DataBlock:  \t" + QString::number((ushort)reResult.Total_DataBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Total_DataBlock[mu], 16).toUpper() + ")";
+
+            reResult.strResult += "\nInitial SpareBlock: \t" + QString::number((ushort)reResult.Initial_SpareBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Initial_SpareBlock[mu], 16).toUpper() + ")";
+            reResult.strResult += "\nCurrent SpareBlock: \t" + QString::number((ushort)reResult.Current_SpareBlock[mu]);
+            reResult.strResult += " (0x" + QString::number((ushort)reResult.Current_SpareBlock[mu], 16).toUpper() + ")";
+*/
+        }
+        else  // There's an error
+        {
+            LPVOID lpMsgBuf;
+            LPVOID lpDisplayBuf;
+            DWORD dw = GetLastError();
+
+            FormatMessage(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                FORMAT_MESSAGE_FROM_SYSTEM |
+                FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                dw,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR) &lpMsgBuf,
+                0, NULL );
+
+            // Display the error message and exit the process
+            lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+                (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)DeviceIoControl) + 40) * sizeof(TCHAR));
+            StringCchPrintf((LPTSTR)lpDisplayBuf,
+                LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+                TEXT("\nERROR: DeviceIoControl failed with error %d: %sFor drive %s\n"), dw, lpMsgBuf, (LPCWSTR)strDvdPath.utf16());
+            reResult.strResult += QString::fromWCharArray((LPCTSTR)lpDisplayBuf);
+            reResult.strResult += "\nAt MU:         \t" + QString::number(mu);
+            reResult.strResult += "\nSLBA :         \t" + QString::number(SLBA);
+            reResult.strResult += " (0x" + QString::number(SLBA, 16).toUpper() + ")";
+            reResult.strResult += "\nCDB command:   \t";
+            QByteArray data = QByteArray::fromRawData((const char *)&cdbR10[current_spare_blocks_1][0], READ10_CMD_LEN);
+            reResult.strResult += data.toHex() + "\n";
+            CloseHandle(hDevice);
+            return reResult;
+        }
+
+        /*  Host will now read the second command to get current spare blocks numbers */
+        memcpy(sptd_sb.sptd.Cdb, cdbR10[current_spare_blocks_2], sizeof(cdbR10[current_spare_blocks_2]));
+
+        ZeroMemory(ReadDataBuf, READ10_REPLY_LEN);
+        ZeroMemory(sptd_sb.SenseBuf, MAX_SENSE_LEN);
+
+        //Send the command to drive - request tray status for drive
+        iResult = DeviceIoControl((HANDLE) hDevice,                  // device to be queried
+                                   IOCTL_SCSI_PASS_THROUGH_DIRECT,   // operation to perform
+                                   (PVOID)&sptd_sb,
+                                   (DWORD)sizeof(sptd_sb),           // input buffer
+                                   (PVOID)&sptd_sb,
+                                   (DWORD)sizeof(sptd_sb),           // output buffer
+                                   &dwBytesReturned,                 // # bytes returned
+                                   NULL);                            // synchronous I/O
+
+        memcpy(ReadDataBuf, sptd_sb.sptd.DataBuffer, sizeof(ReadDataBuf));
+
+        if(iResult)
+        {
+            reResult.iResult = 2;
+            reResult.Current_SpareBlock[mu] = ReadDataBuf[0x65];
 
             reResult.strResult += QStringLiteral("\n\nFor MU:         \t%1").arg(mu);
 
@@ -654,7 +721,7 @@ reResult GetDvdStatus(QString drive)
             reResult.strResult += "\nSLBA :         \t" + QString::number(SLBA);
             reResult.strResult += " (0x" + QString::number(SLBA, 16).toUpper() + ")";
             reResult.strResult += "\nCDB command:   \t";
-            QByteArray data = QByteArray::fromRawData((const char *)&cdbR10[init_and_current_badblocks][0], READ10_CMD_LEN);
+            QByteArray data = QByteArray::fromRawData((const char *)&cdbR10[current_spare_blocks_2][0], READ10_CMD_LEN);
             reResult.strResult += data.toHex() + "\n";
             CloseHandle(hDevice);
             return reResult;
