@@ -6,6 +6,6 @@ Features:
 - Get drive info
 - Refresh drive list
 - Save result
+- Fixed current spare block
 
 Features to work on:
-- Fix current spare block
